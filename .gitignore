@@ -1,4 +1,5 @@
-.env
+*.env
 __pycache__
 .mypy_cache
 api_token.txt
+notebooks
