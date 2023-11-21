@@ -16,13 +16,22 @@ class Grid:
         """
         self.latitude = latitude
         self.longitude = longitude
+
+        # Convert lat/lon to UTM coordinates
         easting, northing, self.zone_number, self.zone_letter = utm.from_latlon(self.latitude, self.longitude)
         utm_points = np.column_stack((easting, northing))
         self.utm_centre = np.mean(utm_points, axis=0)
+
+        # Calculate grid center, nearest neighbors, and grid angle
         self.nn_dists, self.nn_indices = self.nearest_neighbour(utm_points)
         self.grid_angle = self.calculate_grid_angle(utm_points)
+
+        # Convert UTM points to grid coordinates
         self.x, self.y = self.utm_to_grid(utm_points)
+
+        # Label grid points with row and column numbers
         self.rows, self.cols = self.label_grid_points(self.x, self.y)
+
 
     @staticmethod
     def nearest_neighbour(points: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -42,6 +51,7 @@ class Grid:
         nbrs = NearestNeighbors(n_neighbors=2, algorithm='auto').fit(points)
         return nbrs.kneighbors(points)
     
+
     @staticmethod
     def rot_matrix(angle: float) -> np.ndarray:
         """
@@ -56,6 +66,7 @@ class Grid:
         return np.array([[np.cos(angle), -np.sin(angle)], 
                          [np.sin(angle),  np.cos(angle)]])
     
+
     def utm_to_grid(self, utm_points: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Converts UTM coordinates to grid coordinates.
@@ -69,6 +80,7 @@ class Grid:
         x, y = (self.rot_matrix(-self.grid_angle) @ (utm_points - self.utm_centre).T)
         return x, y
     
+
     def calculate_grid_angle(self, utm_points: np.ndarray) -> float:
         """
         Calculates the grid angle based on UTM points.
@@ -86,6 +98,7 @@ class Grid:
         angles = np.arctan2(delta[:,1], delta[:,0]) % (np.pi/2)
         return np.median(angles)
 
+
     def grid_to_latlon(self, grid_points: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Converts grid coordinates back to latitude and longitude.
@@ -100,6 +113,7 @@ class Grid:
         latitude, longitude = utm.to_latlon(utm_points[:,0], utm_points[:,1], self.zone_number, self.zone_letter)
         return latitude, longitude
     
+
     def label_grid_points(self, x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Assigns grid positions to rows and columns.
@@ -126,6 +140,7 @@ class Grid:
         cols = sort_cluster_labels(x, dbscan.fit(x.reshape((-1,1))).labels_)
         return rows, cols
 
+
     def detect_missing_rows_cols(self) -> np.ndarray:
         """
         Identifies missing rows and columns in the grid.
@@ -145,29 +160,41 @@ class Grid:
             flood_fill(grid, x, y+1, fill_value)
             flood_fill(grid, x, y-1, fill_value)
 
+        # Create a grid representation where each tree's position is marked as 1
         original_grid = np.zeros((np.max(self.rows)+2, np.max(self.cols)+2))
         for r, c, in zip(self.rows, self.cols):
             original_grid[r+1,c+1] = 1
 
+        # Copy the original grid and apply flood fill to find unoccupied regions
         grid = original_grid.copy()
         flood_fill(grid, 0,0,-1)
         grid[grid!=-1] = 1
         grid[grid==-1] = 0
 
+        # Define a kernel for morphological filling.
+        # If the result of a correlation with this filter at some location is 3 or more
+        # we fill set the centre to be a tree. Basically, if a coordinate is surrounded
+        # by 3 or more trees, I treat it as a missing tree.
         kernel = np.array([
             [0,1,0],
             [1,0,1],
             [0,1,0]
         ])
         grid = grid[1:-1, 1:-1]
+
+        # Iteratively correlate with kernel to fill in gaps.
+        # Repeat until no change observed between previous and current iteration.
         previous_grid = np.zeros_like(grid)
         while np.any(previous_grid != grid):
             previous_grid = grid.copy()
             correlated = correlate2d(grid, kernel, mode='same')
             grid[correlated>2] = 1
+
+        # Identify the missing coordinates by comparing with the original grid
         missing = grid - original_grid[1:-1, 1:-1]
         missing_coords = np.array(np.nonzero(missing)).T
         return missing_coords
+
 
     def detect_missing_points(self) -> np.ndarray:
         """
