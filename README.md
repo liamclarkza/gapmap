@@ -33,6 +33,7 @@ https://liamjamesclark.com/orchards/{orchard_id}/missing-trees
 
 4. **Row & Column Clustering using DBSCAN:** I then perform clustering using DBSCAN on the x and y coordinates independently to identify row and column clusters for the grid points. The parameters for DBSCAN are a minimum of 2 core points, and the epsilon radius is set to be less than the minimum nearest neighbour distance (I use half the min nearest neighbour distance) so that I avoid clustering adjacent rows and columns.
 
+![Clustering](images/coordinate_histograms.png)
 ![Clustering](images/clusters.png)
 
 5. **Occupancy Map:** Now that each tree has been clustered into a specific row and column, I arrange these rows and column clusters into an ascending order. This allows us to map the trees spatially into a 2D array representing an occupancy map. In the 2D array, I use a 1 to denote a cell in which a tree exists and a 0 to denote an empty space.
