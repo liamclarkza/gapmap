@@ -19,15 +19,15 @@ class Grid:
 
         # Convert lat/lon to UTM coordinates
         easting, northing, self.zone_number, self.zone_letter = utm.from_latlon(self.latitude, self.longitude)
-        utm_points = np.column_stack((easting, northing))
-        self.utm_centre = np.mean(utm_points, axis=0)
+        self.utm_points = np.column_stack((easting, northing))
+        self.utm_centre = np.mean(self.utm_points, axis=0)
 
         # Calculate grid center, nearest neighbors, and grid angle
-        self.nn_dists, self.nn_indices = self.nearest_neighbour(utm_points)
-        self.grid_angle = self.calculate_grid_angle(utm_points)
+        self.nn_dists, self.nn_indices = self.nearest_neighbour(self.utm_points)
+        self.grid_angle = self.calculate_grid_angle(self.utm_points)
 
         # Convert UTM points to grid coordinates
-        self.x, self.y = self.utm_to_grid(utm_points)
+        self.x, self.y = self.utm_to_grid(self.utm_points)
 
         # Label grid points with row and column numbers
         self.rows, self.cols = self.label_grid_points(self.x, self.y)
