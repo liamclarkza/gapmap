@@ -29,16 +29,7 @@ class TreeSurveyResponse(BaseModel):
 
 def get_orchard_tree_lat_lon(base_url: str, orchard_id: str, api_token: str) -> np.ndarray:
     # TODO: Add support for pagination - I haven't implemented this as I need more details 
-    # on the data exposed by the API for this.
-    # For instance, do we have multiple instances of the same tree at different points in time?
-    # We could possibly see if trees from previous surveys are missing in the latest survey.
-    # Do orchards change their shape between surveys, perhaps because of plantine in a new season?
-    # Another caveat may be that the orchard polygon changes over time and we need to adjust for
-    # that.
-    #
-    # For these reasons, I specifically limited the scope to the example orchard provided. I did try
-    # have a look at other orchards but I see that I only have access to this orchard via the API.
-
+    # on the data exposed by the API for this. (see readme for details)
     url = f"{base_url}/treesurveys/?survey__orchard_id={orchard_id}"
     headers = {
         "accept": "application/json",

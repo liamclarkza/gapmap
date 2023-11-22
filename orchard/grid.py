@@ -210,6 +210,7 @@ class Grid:
             missing.append(np.median(neighbours, axis=0))
         return np.array(missing)
 
+
     def detect_missing_lat_lon(self) -> np.ndarray:
         """
         Detects and returns the latitude and longitude of missing trees.
